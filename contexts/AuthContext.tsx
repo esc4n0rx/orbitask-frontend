@@ -70,36 +70,43 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Verificar autenticação ao carregar a aplicação
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = getStoredToken()
-      const storedUser = getStoredUser()
+      try {
+        const storedToken = getStoredToken()
+        const storedUser = getStoredUser()
 
-      if (!storedToken || !isTokenValid(storedToken)) {
-        clearAuthData()
-        dispatch({ type: 'SET_LOADING', payload: false })
-        return
-      }
+        if (!storedToken || !isTokenValid(storedToken)) {
+          clearAuthData()
+          dispatch({ type: 'SET_LOADING', payload: false })
+          return
+        }
 
-      if (storedUser) {
-        dispatch({ 
-          type: 'SET_USER', 
-          payload: { user: storedUser, token: storedToken } 
-        })
-        
-        // Verificar se o token ainda é válido no servidor
-        try {
-          const currentUser = await getCurrentUser(storedToken)
+        if (storedUser) {
           dispatch({ 
             type: 'SET_USER', 
-            payload: { user: currentUser, token: storedToken } 
+            payload: { user: storedUser, token: storedToken } 
           })
-          setStoredUser(currentUser)
-        } catch (error) {
-          // Token inválido, limpar dados
-          clearAuthData()
-          dispatch({ type: 'CLEAR_USER' })
+          
+          // Verificar se o token ainda é válido no servidor em background
+          try {
+            const currentUser = await getCurrentUser(storedToken)
+            dispatch({ 
+              type: 'SET_USER', 
+              payload: { user: currentUser, token: storedToken } 
+            })
+            setStoredUser(currentUser)
+          } catch (error) {
+            console.warn('Token inválido no servidor, fazendo logout:', error)
+            // Token inválido, limpar dados
+            clearAuthData()
+            dispatch({ type: 'CLEAR_USER' })
+          }
+        } else {
+          dispatch({ type: 'SET_LOADING', payload: false })
         }
-      } else {
-        dispatch({ type: 'SET_LOADING', payload: false })
+      } catch (error) {
+        console.error('Erro na inicialização da autenticação:', error)
+        clearAuthData()
+        dispatch({ type: 'CLEAR_USER' })
       }
     }
 
@@ -107,19 +114,32 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [])
 
   const login = (user: User, token: string) => {
-    setStoredToken(token)
-    setStoredUser(user)
-    dispatch({ type: 'SET_USER', payload: { user, token } })
+    try {
+      setStoredToken(token)
+      setStoredUser(user)
+      dispatch({ type: 'SET_USER', payload: { user, token } })
+    } catch (error) {
+      console.error('Erro ao fazer login:', error)
+      throw new Error('Erro ao salvar dados de autenticação')
+    }
   }
 
   const logout = () => {
-    clearAuthData()
-    dispatch({ type: 'CLEAR_USER' })
+    try {
+      clearAuthData()
+      dispatch({ type: 'CLEAR_USER' })
+    } catch (error) {
+      console.error('Erro ao fazer logout:', error)
+    }
   }
 
   const updateUser = (user: User) => {
-    setStoredUser(user)
-    dispatch({ type: 'SET_USER', payload: { user, token: state.token! } })
+    try {
+      setStoredUser(user)
+      dispatch({ type: 'SET_USER', payload: { user, token: state.token! } })
+    } catch (error) {
+      console.error('Erro ao atualizar usuário:', error)
+    }
   }
 
   const value: AuthContextType = {

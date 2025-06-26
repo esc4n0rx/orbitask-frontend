@@ -12,7 +12,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { registerUser } from "@/lib/api/auth"
-import { setStoredToken, setStoredUser, getStoredToken } from "@/lib/auth"
+import { getStoredToken } from "@/lib/auth"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -25,19 +26,28 @@ export default function RegisterPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
+  const { login, isAuthenticated } = useAuth()
 
   // Verificar se já está logado
   useEffect(() => {
-    const token = getStoredToken()
-    if (token) {
+    if (isAuthenticated) {
       router.push("/dashboard")
     } else {
       setIsCheckingAuth(false)
     }
-  }, [router])
+  }, [isAuthenticated, router])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.full_name.trim() || !formData.email.trim() || !formData.password.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha todos os campos.",
+        variant: "destructive",
+      })
+      return
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -66,9 +76,8 @@ export default function RegisterPage() {
         password: formData.password,
       })
       
-      // Armazenar dados localmente
-      setStoredToken(response.token)
-      setStoredUser(response.user)
+      // Usar o contexto de autenticação para fazer login
+      login(response.user, response.token)
       
       toast({
         title: "Conta criada com sucesso!",
@@ -77,13 +86,22 @@ export default function RegisterPage() {
       
       // Redirecionar para dashboard
       router.push("/dashboard")
-      
-      // Recarregar a página para inicializar o contexto de auth
-      window.location.href = "/dashboard"
     } catch (error: any) {
+      console.error('Erro no registro:', error)
+      
+      let errorMessage = "Erro ao criar conta"
+      
+      if (error.message.includes('conexão')) {
+        errorMessage = "Erro de conexão. Verifique sua internet."
+      } else if (error.message.includes('email') || error.status === 409) {
+        errorMessage = "Este email já está em uso."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Erro no registro",
-        description: error.message || "Erro ao criar conta",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -146,6 +164,7 @@ export default function RegisterPage() {
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
                     minLength={2}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -161,6 +180,7 @@ export default function RegisterPage() {
                     onChange={(e) => handleInputChange("email", e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -177,6 +197,7 @@ export default function RegisterPage() {
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
                     minLength={6}
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -192,6 +213,7 @@ export default function RegisterPage() {
                     onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>

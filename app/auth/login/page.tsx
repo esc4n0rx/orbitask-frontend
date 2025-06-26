@@ -12,7 +12,8 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { loginUser } from "@/lib/api/auth"
-import { setStoredToken, setStoredUser, getStoredToken } from "@/lib/auth"
+import { getStoredToken } from "@/lib/auth"
+import { useAuth } from "@/hooks/use-auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -21,27 +22,36 @@ export default function LoginPage() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
+  const { login, isAuthenticated } = useAuth()
 
   // Verificar se já está logado
   useEffect(() => {
-    const token = getStoredToken()
-    if (token) {
+    if (isAuthenticated) {
       router.push("/dashboard")
     } else {
       setIsCheckingAuth(false)
     }
-  }, [router])
+  }, [isAuthenticated, router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!email.trim() || !password.trim()) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Por favor, preencha email e senha.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
       const response = await loginUser({ email, password })
       
-      // Armazenar dados localmente
-      setStoredToken(response.token)
-      setStoredUser(response.user)
+      // Usar o contexto de autenticação para fazer login
+      login(response.user, response.token)
       
       toast({
         title: "Login realizado com sucesso!",
@@ -50,13 +60,22 @@ export default function LoginPage() {
       
       // Redirecionar para dashboard
       router.push("/dashboard")
-      
-      // Recarregar a página para inicializar o contexto de auth
-      window.location.href = "/dashboard"
     } catch (error: any) {
+      console.error('Erro no login:', error)
+      
+      let errorMessage = "Erro ao fazer login"
+      
+      if (error.message.includes('conexão')) {
+        errorMessage = "Erro de conexão. Verifique sua internet."
+      } else if (error.message.includes('credenciais') || error.status === 401) {
+        errorMessage = "Email ou senha incorretos."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Erro no login",
-        description: error.message || "Credenciais inválidas",
+        description: errorMessage,
         variant: "destructive",
       })
     } finally {
@@ -114,6 +133,7 @@ export default function LoginPage() {
                     onChange={(e) => setEmail(e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -129,6 +149,7 @@ export default function LoginPage() {
                     onChange={(e) => setPassword(e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
