@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
-import { Home, Rocket, Users, Settings, HelpCircle, ChevronLeft, ChevronRight, Star } from "lucide-react"
+import { Home, Rocket, Users, Settings, HelpCircle, ChevronLeft, ChevronRight, Star, LogOut } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
+import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
 
 const menuItems = [
   { icon: Home, label: "Dashboard", href: "/dashboard" },
@@ -18,6 +20,23 @@ const menuItems = [
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const pathname = usePathname()
+  const router = useRouter()
+  const { user, logout, isAuthenticated } = useAuth()
+  const { toast } = useToast()
+
+  const handleLogout = () => {
+    logout()
+    toast({
+      title: "Logout realizado",
+      description: "Você foi desconectado com sucesso.",
+    })
+    router.push("/")
+  }
+
+  // Se não estiver autenticado, não mostra a sidebar
+  if (!isAuthenticated) {
+    return null
+  }
 
   return (
     <motion.aside
@@ -27,7 +46,7 @@ export function Sidebar() {
         isCollapsed ? "w-16" : "w-64"
       }`}
     >
-      <div className="p-4">
+      <div className="p-4 flex flex-col h-full">
         {/* Logo */}
         <div className="flex items-center justify-between mb-8">
           {!isCollapsed && (
@@ -49,7 +68,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="space-y-2">
+        <nav className="space-y-2 flex-1">
           {menuItems.map((item) => {
             const isActive = pathname === item.href
             return (
@@ -71,16 +90,48 @@ export function Sidebar() {
         </nav>
 
         {/* User Profile */}
-        {!isCollapsed && (
-          <div className="absolute bottom-4 left-4 right-4">
+        {!isCollapsed && user && (
+          <div className="mt-auto space-y-2">
+            {/* Logout Button */}
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full justify-start text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="ml-3">Logout</span>
+            </Button>
+            
+            {/* User Info */}
             <div className="flex items-center space-x-3 p-3 bg-space-700/50 rounded-lg border border-space-600">
               <div className="w-8 h-8 bg-gradient-to-r from-cosmic-purple to-cosmic-cyan rounded-full flex items-center justify-center">
                 <Star className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">Commander Neil</p>
-                <p className="text-xs text-gray-400 truncate">neil@orbitask.com</p>
+                <p className="text-sm font-medium text-white truncate">{user.full_name}</p>
+                <p className="text-xs text-gray-400 truncate">{user.email}</p>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Collapsed User Profile */}
+        {isCollapsed && user && (
+          <div className="mt-auto space-y-2">
+            <Button
+              variant="ghost"
+              onClick={handleLogout}
+              className="w-full p-2 text-gray-400 hover:text-red-400 hover:bg-red-500/10"
+              title="Logout"
+            >
+              <LogOut className="w-4 h-4" />
+            </Button>
+            
+            <div 
+              className="w-8 h-8 bg-gradient-to-r from-cosmic-purple to-cosmic-cyan rounded-full flex items-center justify-center mx-auto"
+              title={user.full_name}
+            >
+              <Star className="w-4 h-4 text-white" />
             </div>
           </div>
         )}

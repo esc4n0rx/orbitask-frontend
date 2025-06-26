@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Sidebar } from "@/components/shared/Sidebar"
 import { OrbitAIWidget } from "@/components/shared/OrbitAIWidget"
 import { CreateBoardModal } from "@/components/modals/CreateBoardModal"
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import {
   Plus,
   Settings,
@@ -125,6 +126,7 @@ export default function StationDetailPage() {
   const [isCreateBoardModalOpen, setIsCreateBoardModalOpen] = useState(false)
 
   return (
+  <ProtectedRoute>
     <div className="flex min-h-screen bg-space-900">
       <Sidebar />
 
@@ -436,5 +438,6 @@ export default function StationDetailPage() {
         stationId={mockStation.id}
       />
     </div>
+    </ProtectedRoute>
   )
 }

@@ -10,6 +10,7 @@ import { KanbanColumn } from "@/components/kanban/KanbanColumn"
 import { TaskCard } from "@/components/kanban/TaskCard"
 import { CreateTaskModal } from "@/components/modals/CreateTaskModal"
 import { Plus, Settings, Users, Filter } from "lucide-react"
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 
 // Mock data for the kanban board
 const mockBoard = {
@@ -96,6 +97,7 @@ export default function KanbanBoardPage() {
   }
 
   return (
+  <ProtectedRoute>
     <div className="flex min-h-screen bg-space-900">
       <Sidebar />
 
@@ -148,5 +150,6 @@ export default function KanbanBoardPage() {
       <OrbitAIWidget />
       <CreateTaskModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} lists={mockLists} />
     </div>
+  </ProtectedRoute>
   )
 }

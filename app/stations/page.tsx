@@ -9,6 +9,7 @@ import { Sidebar } from "@/components/shared/Sidebar"
 import { OrbitAIWidget } from "@/components/shared/OrbitAIWidget"
 import { CreateStationModal } from "@/components/modals/CreateStationModal"
 import { Rocket, Users, Calendar, Plus, Settings, Star } from "lucide-react"
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 
 const mockStations = [
   {
@@ -70,6 +71,7 @@ export default function StationsPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
 
   return (
+   <ProtectedRoute>
     <div className="flex min-h-screen bg-space-900">
       <Sidebar />
 
@@ -179,5 +181,6 @@ export default function StationsPage() {
       <OrbitAIWidget />
       <CreateStationModal isOpen={isCreateModalOpen} onClose={() => setIsCreateModalOpen(false)} />
     </div>
+    </ProtectedRoute>
   )
 }

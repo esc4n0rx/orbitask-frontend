@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,22 +10,70 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Rocket, Mail, Lock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { loginUser } from "@/lib/api/auth"
+import { setStoredToken, setStoredUser, getStoredToken } from "@/lib/auth"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
+
+  // Verificar se já está logado
+  useEffect(() => {
+    const token = getStoredToken()
+    if (token) {
+      router.push("/dashboard")
+    } else {
+      setIsCheckingAuth(false)
+    }
+  }, [router])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
 
-    // Mock login - simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      const response = await loginUser({ email, password })
+      
+      // Armazenar dados localmente
+      setStoredToken(response.token)
+      setStoredUser(response.user)
+      
+      toast({
+        title: "Login realizado com sucesso!",
+        description: `Bem-vindo de volta, ${response.user.full_name}!`,
+      })
+      
+      // Redirecionar para dashboard
       router.push("/dashboard")
-    }, 1500)
+      
+      // Recarregar a página para inicializar o contexto de auth
+      window.location.href = "/dashboard"
+    } catch (error: any) {
+      toast({
+        title: "Erro no login",
+        description: error.message || "Credenciais inválidas",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-space-900 via-space-800 to-space-700 flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-white">
+          <div className="w-8 h-8 border-2 border-cosmic-blue border-t-transparent rounded-full animate-spin" />
+          <span>Verificando autenticação...</span>
+        </div>
+      </div>
+    )
   }
 
   return (

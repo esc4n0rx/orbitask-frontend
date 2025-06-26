@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Sidebar } from "@/components/shared/Sidebar"
 import { OrbitAIWidget } from "@/components/shared/OrbitAIWidget"
 import { InviteMemberModal } from "@/components/modals/InviteMemberModal"
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { Users, UserPlus, Search, MoreVertical, Mail, Calendar, Shield, Crown, Star, User } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
@@ -127,6 +128,7 @@ export default function TeamPage() {
   })
 
   return (
+  <ProtectedRoute>
     <div className="flex min-h-screen bg-space-900">
       <Sidebar />
 
@@ -358,5 +360,6 @@ export default function TeamPage() {
       <OrbitAIWidget />
       <InviteMemberModal isOpen={isInviteModalOpen} onClose={() => setIsInviteModalOpen(false)} />
     </div>
+  </ProtectedRoute>
   )
 }

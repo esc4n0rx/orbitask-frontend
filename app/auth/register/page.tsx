@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,30 +10,101 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Rocket, Mail, Lock, User, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import { registerUser } from "@/lib/api/auth"
+import { setStoredToken, setStoredUser, getStoredToken } from "@/lib/auth"
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
-    name: "",
+    full_name: "",
     email: "",
     password: "",
     confirmPassword: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true)
   const router = useRouter()
+  const { toast } = useToast()
+
+  // Verificar se já está logado
+  useEffect(() => {
+    const token = getStoredToken()
+    if (token) {
+      router.push("/dashboard")
+    } else {
+      setIsCheckingAuth(false)
+    }
+  }, [router])
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (formData.password !== formData.confirmPassword) {
+      toast({
+        title: "Erro na validação",
+        description: "As senhas não coincidem.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (formData.password.length < 6) {
+      toast({
+        title: "Erro na validação",
+        description: "A senha deve ter pelo menos 6 caracteres.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
-    // Mock registration - simulate API call
-    setTimeout(() => {
-      setIsLoading(false)
+    try {
+      const response = await registerUser({
+        full_name: formData.full_name,
+        email: formData.email,
+        password: formData.password,
+      })
+      
+      // Armazenar dados localmente
+      setStoredToken(response.token)
+      setStoredUser(response.user)
+      
+      toast({
+        title: "Conta criada com sucesso!",
+        description: `Bem-vindo à Orbitask, ${response.user.full_name}!`,
+      })
+      
+      // Redirecionar para dashboard
       router.push("/dashboard")
-    }, 1500)
+      
+      // Recarregar a página para inicializar o contexto de auth
+      window.location.href = "/dashboard"
+    } catch (error: any) {
+      toast({
+        title: "Erro no registro",
+        description: error.message || "Erro ao criar conta",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
+  }
+
+  // Mostrar loading enquanto verifica autenticação
+  if (isCheckingAuth) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-space-900 via-space-800 to-space-700 flex items-center justify-center">
+        <div className="flex items-center space-x-2 text-white">
+          <div className="w-8 h-8 border-2 border-cosmic-purple border-t-transparent rounded-full animate-spin" />
+          <span>Verificando autenticação...</span>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -70,10 +141,11 @@ export default function RegisterPage() {
                   <Input
                     type="text"
                     placeholder="Neil Armstrong"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
+                    value={formData.full_name}
+                    onChange={(e) => handleInputChange("full_name", e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    minLength={2}
                   />
                 </div>
               </div>
@@ -104,6 +176,7 @@ export default function RegisterPage() {
                     onChange={(e) => handleInputChange("password", e.target.value)}
                     className="pl-10 bg-space-700 border-space-600 text-white placeholder:text-gray-400"
                     required
+                    minLength={6}
                   />
                 </div>
               </div>
