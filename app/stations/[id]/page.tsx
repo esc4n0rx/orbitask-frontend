@@ -25,6 +25,9 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 // Mock data for station
 const mockStation = {
   id: 1,

@@ -14,6 +14,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { Users, UserPlus, Search, MoreVertical, Mail, Calendar, Shield, Crown, Star, User } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 const mockTeamMembers = [
   {
     id: 1,

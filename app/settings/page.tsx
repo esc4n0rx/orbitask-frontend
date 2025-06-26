@@ -17,6 +17,9 @@ import { User, Bell, Shield, Palette, Globe, Key, Camera, Save, Trash2, Moon, Su
 import { useAuth } from "@/hooks/use-auth"
 import { useToast } from "@/hooks/use-toast"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 export default function SettingsPage() {
   const { user } = useAuth()
   const { toast } = useToast()

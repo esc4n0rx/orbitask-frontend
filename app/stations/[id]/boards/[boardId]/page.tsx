@@ -12,6 +12,9 @@ import { CreateTaskModal } from "@/components/modals/CreateTaskModal"
 import { Plus, Settings, Users, Filter } from "lucide-react"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 // Mock data for the kanban board
 const mockBoard = {
   id: 1,

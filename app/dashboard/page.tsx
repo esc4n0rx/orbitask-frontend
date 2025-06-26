@@ -10,6 +10,9 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 import { Rocket, Users, CheckCircle, Clock, Plus, ArrowRight } from "lucide-react"
 import Link from "next/link"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 const mockStats = {
   totalStations: 5,
   totalTasks: 42,

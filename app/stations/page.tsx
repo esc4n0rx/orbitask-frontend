@@ -11,6 +11,9 @@ import { CreateStationModal } from "@/components/modals/CreateStationModal"
 import { Rocket, Users, Calendar, Plus, Settings, Star } from "lucide-react"
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute"
 
+// Forçar renderização dinâmica para evitar problemas de pré-renderização
+export const dynamic = 'force-dynamic'
+
 const mockStations = [
   {
     id: 1,
