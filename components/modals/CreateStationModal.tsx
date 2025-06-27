@@ -14,6 +14,7 @@ import { Rocket, Palette } from "lucide-react"
 interface CreateStationModalProps {
   isOpen: boolean
   onClose: () => void
+  onStationCreated?: () => void
 }
 
 const colorOptions = [

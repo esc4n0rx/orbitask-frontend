@@ -8,38 +8,114 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UserPlus, Mail, Shield } from "lucide-react"
+import { useAuth } from "@/hooks/use-auth"
+import { useToast } from "@/hooks/use-toast"
+import { addStationMember } from "@/lib/api/station-members"
 
 interface InviteMemberModalProps {
   isOpen: boolean
   onClose: () => void
+  stationId?: string
+  onMemberAdded?: () => void
 }
 
-export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
+export function InviteMemberModal({ isOpen, onClose, stationId, onMemberAdded }: InviteMemberModalProps) {
   const [formData, setFormData] = useState({
     email: "",
-    role: "member",
+    role: "member" as "admin" | "leader" | "member",
     message: "",
   })
   const [isLoading, setIsLoading] = useState(false)
+  const { token } = useAuth()
+  const { toast } = useToast()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!formData.email.trim()) {
+      toast({
+        title: "Email obrigatório",
+        description: "Por favor, insira o email do membro.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!stationId) {
+      toast({
+        title: "Erro",
+        description: "ID da station não fornecido.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!token) {
+      toast({
+        title: "Erro de autenticação",
+        description: "Você precisa estar logado para adicionar membros.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
 
-    // Mock API call
-    setTimeout(() => {
-      setIsLoading(false)
-      onClose()
+    try {
+      const response = await addStationMember(stationId, {
+        email: formData.email.trim(),
+        role: formData.role,
+      }, token)
+
+      toast({
+        title: "Membro adicionado com sucesso! 👨‍🚀",
+        description: `${response.member.user.full_name} foi adicionado à station como ${response.member.role}.`,
+      })
+
+      // Reset form
       setFormData({ email: "", role: "member", message: "" })
-    }, 1500)
+      
+      // Close modal
+      onClose()
+
+      // Notify parent component
+      onMemberAdded?.()
+    } catch (error: any) {
+      console.error('Erro ao adicionar membro:', error)
+      
+      let errorMessage = "Erro ao adicionar membro"
+      
+      if (error.message.includes('não encontrado')) {
+        errorMessage = "Usuário não encontrado com este email."
+      } else if (error.message.includes('conexão')) {
+        errorMessage = "Erro de conexão. Verifique sua internet."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      toast({
+        title: "Erro ao adicionar membro",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }))
   }
 
+  const handleClose = () => {
+    if (!isLoading) {
+      setFormData({ email: "", role: "member", message: "" })
+      onClose()
+    }
+  }
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="bg-space-800 border-space-600 text-white max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
@@ -64,6 +140,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
               onChange={(e) => handleInputChange("email", e.target.value)}
               className="bg-space-700 border-space-600 text-white placeholder:text-gray-400"
               required
+              disabled={isLoading}
             />
           </div>
 
@@ -72,8 +149,8 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
               <Shield className="w-4 h-4" />
               <span>Role</span>
             </Label>
-            <Select value={formData.role} onValueChange={(value) => handleInputChange("role", value)}>
-              <SelectTrigger className="bg-space-700 border-space-600 text-white">
+            <Select value={formData.role} onValueChange={(value: "admin" | "leader" | "member") => handleInputChange("role", value)}>
+              <SelectTrigger className="bg-space-700 border-space-600 text-white" disabled={isLoading}>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="bg-space-700 border-space-600">
@@ -100,6 +177,7 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
               value={formData.message}
               onChange={(e) => handleInputChange("message", e.target.value)}
               className="bg-space-700 border-space-600 text-white placeholder:text-gray-400"
+              disabled={isLoading}
             />
           </div>
 
@@ -107,28 +185,29 @@ export function InviteMemberModal({ isOpen, onClose }: InviteMemberModalProps) {
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               className="flex-1 border-space-600 text-gray-300 hover:bg-space-700"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || !formData.email.trim()}
-              className="flex-1 bg-cosmic-blue hover:bg-cosmic-blue/80"
-            >
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
-                  Sending...
-                </div>
-              ) : (
-                "Send Invitation"
-              )}
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
-  )
+              disabled={isLoading}
+           >
+             Cancel
+           </Button>
+           <Button
+             type="submit"
+             disabled={isLoading || !formData.email.trim()}
+             className="flex-1 bg-cosmic-blue hover:bg-cosmic-blue/80"
+           >
+             {isLoading ? (
+               <div className="flex items-center">
+                 <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                 Sending...
+               </div>
+             ) : (
+               "Send Invitation"
+             )}
+           </Button>
+         </div>
+       </form>
+     </DialogContent>
+   </Dialog>
+ )
 }
