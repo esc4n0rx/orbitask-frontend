@@ -1,6 +1,6 @@
 import { LoginCredentials, RegisterCredentials, AuthResponse, User } from '@/types/auth'
 
-const API_BASE_URL = 'https://olympic-kirstyn-esc4n0rx-c979677c.koyeb.app/api/auth'
+const API_BASE_URL = 'https://orbitask-backend.onrender.com/api/auth'
 
 class AuthApiError extends Error {
   constructor(public status: number, public error: string, message: string) {
